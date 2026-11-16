@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Abyssal Arena 3D - Isometric Roguelike</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="gameContainer">
+  <!-- Three.js renders its 3D WebGL canvas here -->
+  <div id="canvasMount"></div>
+
+  <!-- Top HUD -->
+  <div id="hud">
+    <div class="hud-left">
+      <div class="stat-label">HP: <span id="hpText">100/100</span></div>
+      <div class="bar-wrap"><div id="hpBar"></div></div>
+      <div class="stat-label" style="margin-top:8px;">LVL <span id="lvlText">1</span></div>
+      <div class="bar-wrap xp-wrap"><div id="xpBar"></div></div>
+    </div>
+
+    <div class="hud-center">
+      <div id="waveBanner" class="hidden">WAVE 1</div>
+    </div>
+
+    <div class="hud-right">
+      <div class="wave-counter">WAVE <span id="waveText">1</span></div>
+      <div>KILLS: <span id="killText">0</span></div>
+      <div class="dash-status">DASH [SPACE]: <span id="dashText">READY</span></div>
+    </div>
+  </div>
+
+  <!-- Boss Health Bar -->
+  <div id="bossHud" class="hidden">
+    <div id="bossName">WARDEN OF ASH</div>
+    <div id="bossBarWrap"><div id="bossBar"></div></div>
+  </div>
+
+  <!-- Start Screen -->
+  <div id="startScreen" class="overlay">
+    <h1>Abyssal Arena 3D</h1>
+    <p>
+      <b>WASD / Arrows</b> to Move &bull; <b>Mouse</b> to Aim &amp; Shoot &bull; <b>SPACE</b> to Dash (Invulnerable).<br>
+      Fight through a 3D isometric dungeon, dodge elevated pillars, and defeat multi-phase bosses every 5 waves.
+    </p>
+    <button id="startBtn">Enter the Arena</button>
+  </div>
+
+  <!-- Level Up Draft Screen -->
+  <div id="upgradeScreen" class="overlay hidden">
+    <h2>LEVEL UP!</h2>
+    <p>Choose an in-run mutation:</p>
+    <div class="cards" id="upgradeCards"></div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameOverScreen" class="overlay hidden">
+    <h1 class="dead-title">YOU DIED</h1>
+    <p id="deathStats">Reached Wave 1 | Kills: 0</p>
+    <button id="restartBtn">Try Again</button>
+  </div>
+</div>
+
+<!-- Three.js Library via CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
