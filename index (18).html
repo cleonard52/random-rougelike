@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Abyssal Arena 3D - Sanctuary Edition</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="gameContainer">
+  <!-- 3D WebGL Viewport -->
+  <div id="canvasMount"></div>
+
+  <!-- In-Game HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-left">
+      <div class="stat-label">HP: <span id="hpText">100/100</span></div>
+      <div class="bar-wrap"><div id="hpBar"></div></div>
+      <div class="stat-label" style="margin-top:8px;">LVL <span id="lvlText">1</span></div>
+      <div class="bar-wrap xp-wrap"><div id="xpBar"></div></div>
+    </div>
+
+    <div class="hud-center">
+      <div id="waveBanner" class="hidden">WAVE 1</div>
+    </div>
+
+    <div class="hud-right">
+      <div class="wave-counter">WAVE <span id="waveText">1</span></div>
+      <div>KILLS: <span id="killText">0</span></div>
+      <div class="dash-status">DASH [SPACE]: <span id="dashText">READY</span></div>
+    </div>
+  </div>
+
+  <!-- Boss Health Bar -->
+  <div id="bossHud" class="hidden">
+    <div id="bossName">WARDEN OF ASH</div>
+    <div id="bossBarWrap"><div id="bossBar"></div></div>
+  </div>
+
+  <!-- Main Sanctuary Hub Menu -->
+  <div id="sanctuaryMenu" class="overlay">
+    <div class="hub-header">
+      <h1>ABYSSAL ARENA 3D</h1>
+      <div class="shard-bank">SOUL SHARDS: <span id="shardCount">0</span></div>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="tabLoadout">Loadout &amp; Skins</button>
+      <button class="tab-btn" data-tab="tabSkillTree">Skill Tree</button>
+    </div>
+
+    <!-- Tab 1: Weapons & Skins -->
+    <div id="tabLoadout" class="tab-content active">
+      <h3>Select Primary Weapon</h3>
+      <div class="grid-select" id="weaponGrid"></div>
+
+      <h3 style="margin-top: 20px;">Select Exosuit Skin</h3>
+      <div class="grid-select" id="skinGrid"></div>
+
+      <div class="launch-bar">
+        <button id="startBtn" class="primary-btn">Enter the Arena</button>
+      </div>
+    </div>
+
+    <!-- Tab 2: Branching Skill Tree -->
+    <div id="tabSkillTree" class="tab-content hidden">
+      <p class="tree-hint">Unlock base nodes to access higher-tier branches. Upgrades persist permanently.</p>
+      <div class="skill-branches" id="skillTreeContainer"></div>
+    </div>
+  </div>
+
+  <!-- In-Run Level Up Draft -->
+  <div id="upgradeScreen" class="overlay hidden">
+    <h2>LEVEL UP!</h2>
+    <p>Choose an in-run mutation:</p>
+    <div class="cards" id="upgradeCards"></div>
+  </div>
+
+  <!-- Game Over Summary -->
+  <div id="gameOverScreen" class="overlay hidden">
+    <h1 class="dead-title">YOU DIED</h1>
+    <p id="deathStats">Reached Wave 1 | Kills: 0</p>
+    <div class="shard-reward">+<span id="earnedShardsText">0</span> Soul Shards Collected</div>
+    <button id="returnHubBtn" class="primary-btn">Return to Sanctuary</button>
+  </div>
+</div>
+
+<!-- Three.js Library & Unified Game Engine -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
