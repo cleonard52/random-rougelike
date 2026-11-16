@@ -2,17 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Abyssal Arena 3D - Isometric Roguelike</title>
+  <title>Abyssal Arena 3D - Sanctuary Edition</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="gameContainer">
-  <!-- Three.js renders its 3D WebGL canvas here -->
+  <!-- 3D WebGL Viewport -->
   <div id="canvasMount"></div>
 
-  <!-- Top HUD -->
-  <div id="hud">
+  <!-- In-Game HUD -->
+  <div id="hud" class="hidden">
     <div class="hud-left">
       <div class="stat-label">HP: <span id="hpText">100/100</span></div>
       <div class="bar-wrap"><div id="hpBar"></div></div>
@@ -37,33 +37,57 @@
     <div id="bossBarWrap"><div id="bossBar"></div></div>
   </div>
 
-  <!-- Start Screen -->
-  <div id="startScreen" class="overlay">
-    <h1>Abyssal Arena 3D</h1>
-    <p>
-      <b>WASD / Arrows</b> to Move &bull; <b>Mouse</b> to Aim &amp; Shoot &bull; <b>SPACE</b> to Dash (Invulnerable).<br>
-      Fight through a 3D isometric dungeon, dodge elevated pillars, and defeat multi-phase bosses every 5 waves.
-    </p>
-    <button id="startBtn">Enter the Arena</button>
+  <!-- Main Sanctuary Hub Menu -->
+  <div id="sanctuaryMenu" class="overlay">
+    <div class="hub-header">
+      <h1>ABYSSAL ARENA 3D</h1>
+      <div class="shard-bank">SOUL SHARDS: <span id="shardCount">0</span></div>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="tabLoadout">Loadout &amp; Skins</button>
+      <button class="tab-btn" data-tab="tabSkillTree">Skill Tree</button>
+    </div>
+
+    <!-- Tab 1: Weapons & Skins -->
+    <div id="tabLoadout" class="tab-content active">
+      <h3>Select Primary Weapon</h3>
+      <div class="grid-select" id="weaponGrid"></div>
+
+      <h3 style="margin-top: 20px;">Select Exosuit Skin</h3>
+      <div class="grid-select" id="skinGrid"></div>
+
+      <div class="launch-bar">
+        <button id="startBtn" class="primary-btn">Enter the Arena</button>
+      </div>
+    </div>
+
+    <!-- Tab 2: Branching Skill Tree -->
+    <div id="tabSkillTree" class="tab-content hidden">
+      <p class="tree-hint">Unlock base nodes to access higher-tier branches. Upgrades persist permanently.</p>
+      <div class="skill-branches" id="skillTreeContainer"></div>
+    </div>
   </div>
 
-  <!-- Level Up Draft Screen -->
+  <!-- In-Run Level Up Draft -->
   <div id="upgradeScreen" class="overlay hidden">
     <h2>LEVEL UP!</h2>
     <p>Choose an in-run mutation:</p>
     <div class="cards" id="upgradeCards"></div>
   </div>
 
-  <!-- Game Over Screen -->
+  <!-- Game Over Summary -->
   <div id="gameOverScreen" class="overlay hidden">
     <h1 class="dead-title">YOU DIED</h1>
     <p id="deathStats">Reached Wave 1 | Kills: 0</p>
-    <button id="restartBtn">Try Again</button>
+    <div class="shard-reward">+<span id="earnedShardsText">0</span> Soul Shards Collected</div>
+    <button id="returnHubBtn" class="primary-btn">Return to Sanctuary</button>
   </div>
 </div>
 
-<!-- Three.js Library via CDN -->
+<!-- Three.js Library & Modular Game Scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="data.js"></script>
 <script src="game.js"></script>
 </body>
 </html>

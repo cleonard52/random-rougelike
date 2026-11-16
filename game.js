@@ -18,7 +18,7 @@ const AudioSys = {
     osc.start();
     osc.stop(this.ctx.currentTime + duration);
   },
-  shoot() { this.play(420, 'triangle', 0.08, 0.06, 120); },
+  shoot(pitch = 420) { this.play(pitch, 'triangle', 0.08, 0.06, 110); },
   hit() { this.play(160, 'sawtooth', 0.07, 0.05, 60); },
   kill() { this.play(220, 'square', 0.14, 0.07, 45); },
   dash() { this.play(300, 'sine', 0.18, 0.09, 650); },
@@ -30,7 +30,7 @@ const AudioSys = {
   }
 };
 
-// --- Procedural Texture Generator (Creates Albedo + Bump Maps) ---
+// --- Procedural PBR Texture Generator ---
 const TextureFactory = {
   createFloorTextures() {
     const size = 512;
@@ -42,13 +42,11 @@ const TextureFactory = {
     const dCtx = diffCanvas.getContext('2d');
     const bCtx = bumpCanvas.getContext('2d');
 
-    // Deep mortar base
     dCtx.fillStyle = '#0c0c14';
     dCtx.fillRect(0, 0, size, size);
     bCtx.fillStyle = '#151515';
     bCtx.fillRect(0, 0, size, size);
 
-    // 4x4 Carved Dungeon Flagstones
     const tiles = 4;
     const step = size / tiles;
     for (let gx = 0; gx < tiles; gx++) {
@@ -59,26 +57,22 @@ const TextureFactory = {
         const w = step - pad * 2;
         const h = step - pad * 2;
 
-        // Subtle per-tile color variation
         const shade = 24 + Math.floor(Math.random() * 12);
         dCtx.fillStyle = `rgb(${shade}, ${shade + 2}, ${shade + 14})`;
         dCtx.fillRect(x, y, w, h);
 
-        // Beveled stone highlight for 3D bump depth
         bCtx.fillStyle = '#b5b5b5';
         bCtx.fillRect(x, y, w, h);
         bCtx.strokeStyle = '#ffffff';
         bCtx.lineWidth = 3;
         bCtx.strokeRect(x + 2, y + 2, w - 4, h - 4);
 
-        // Inner carved rune border
         dCtx.strokeStyle = 'rgba(112, 161, 255, 0.08)';
         dCtx.lineWidth = 2;
         dCtx.strokeRect(x + 10, y + 10, w - 20, h - 20);
       }
     }
 
-    // Weathering speckles & stone grain
     for (let i = 0; i < 4500; i++) {
       const rx = Math.random() * size;
       const ry = Math.random() * size;
@@ -89,7 +83,6 @@ const TextureFactory = {
       bCtx.fillRect(rx, ry, 2, 2);
     }
 
-    // Hairline cracks across tiles
     dCtx.strokeStyle = 'rgba(5, 5, 10, 0.55)';
     bCtx.strokeStyle = '#101010';
     dCtx.lineWidth = bCtx.lineWidth = 1.5;
@@ -129,7 +122,6 @@ const TextureFactory = {
     bCtx.fillStyle = '#808080';
     bCtx.fillRect(0, 0, size, size);
 
-    // Chiseled Stone Masonry Courses
     const rows = 4;
     const rowH = size / rows;
     for (let r = 0; r < rows; r++) {
@@ -152,7 +144,6 @@ const TextureFactory = {
       }
     }
 
-    // Subtle Moss Patches at Base
     for (let m = 0; m < 45; m++) {
       const mx = Math.random() * size;
       const my = size * 0.55 + Math.random() * (size * 0.45);
@@ -163,7 +154,6 @@ const TextureFactory = {
       dCtx.fill();
     }
 
-    // Glowing Arcane Rune Band near top
     dCtx.fillStyle = 'rgba(255, 165, 2, 0.35)';
     dCtx.fillRect(0, 28, size, 6);
     bCtx.fillStyle = '#ffffff';
@@ -184,13 +174,11 @@ const TextureFactory = {
     ctx.fillStyle = baseHex;
     ctx.fillRect(0, 0, size, size);
 
-    // Brushed metallic horizontal sheen
     for (let y = 0; y < size; y += 2) {
       ctx.fillStyle = y % 4 === 0 ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.12)';
       ctx.fillRect(0, y, size, 1);
     }
 
-    // Glowing energy trim & rivets
     ctx.fillStyle = stripeHex;
     ctx.fillRect(0, size * 0.44, size, 10);
 
@@ -238,7 +226,6 @@ const TextureFactory = {
       }
     }
 
-    // Organic noise grain
     for (let i = 0; i < 600; i++) {
       ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.18)';
       ctx.fillRect(Math.random() * size, Math.random() * size, 3, 3);
@@ -248,7 +235,7 @@ const TextureFactory = {
   }
 };
 
-// --- Three.js Scene & Isometric Orthographic Camera ---
+// --- Three.js Scene & Isometric Camera ---
 const mount = document.getElementById('canvasMount');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x08080e);
@@ -282,7 +269,7 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Lighting (Warm Torch Corner Lights + Cool Overhead Key Light)
+// Lighting
 const ambientLight = new THREE.AmbientLight(0x454566, 1.15);
 scene.add(ambientLight);
 
@@ -306,20 +293,20 @@ scene.add(playerLight);
 // --- Textured 3D Arena Floor, Braziers, & Stone Pillars ---
 const ARENA_HALF = 18;
 const floorTex = TextureFactory.createFloorTextures();
-const floorGeo = new THREE.PlaneGeometry(ARENA_HALF * 2, ARENA_HALF * 2);
-const floorMat = new THREE.MeshStandardMaterial({
-  map: floorTex.map,
-  bumpMap: floorTex.bumpMap,
-  bumpScale: 0.14,
-  roughness: 0.78,
-  metalness: 0.12
-});
-const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+const floorMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(ARENA_HALF * 2, ARENA_HALF * 2),
+  new THREE.MeshStandardMaterial({
+    map: floorTex.map,
+    bumpMap: floorTex.bumpMap,
+    bumpScale: 0.14,
+    roughness: 0.78,
+    metalness: 0.12
+  })
+);
 floorMesh.rotation.x = -Math.PI / 2;
 floorMesh.receiveShadow = true;
 scene.add(floorMesh);
 
-// Corner Torch Braziers for Warm Atmospheric Reflections
 [[-16.5, -16.5], [16.5, -16.5], [-16.5, 16.5], [16.5, 16.5]].forEach(([bx, bz]) => {
   const brazier = new THREE.Mesh(
     new THREE.CylinderGeometry(0.6, 0.4, 1.1, 8),
@@ -341,7 +328,6 @@ scene.add(floorMesh);
   scene.add(torchLight);
 });
 
-// Chiseled Stone Pillars with Bump Maps & Capstones
 const stoneTex = TextureFactory.createStoneBlockTextures();
 const wallMat = new THREE.MeshStandardMaterial({
   map: stoneTex.map,
@@ -378,14 +364,12 @@ pillars.forEach(p => {
   scene.add(group);
 });
 
-// Perimeter Stone Walls
-const borderConfigs = [
+[
   { x: 0, z: -ARENA_HALF - 0.5, w: ARENA_HALF * 2 + 2, d: 1 },
   { x: 0, z: ARENA_HALF + 0.5, w: ARENA_HALF * 2 + 2, d: 1 },
   { x: -ARENA_HALF - 0.5, z: 0, w: 1, d: ARENA_HALF * 2 },
   { x: ARENA_HALF + 0.5, z: 0, w: 1, d: ARENA_HALF * 2 }
-];
-borderConfigs.forEach(b => {
+].forEach(b => {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(b.w, 1.5, b.d), wallMat);
   mesh.position.set(b.x, 0.75, b.z);
   mesh.castShadow = true;
@@ -393,8 +377,6 @@ borderConfigs.forEach(b => {
   scene.add(mesh);
 });
 
-// Pre-built Enemy & Player Textures
-const playerArmorTex = TextureFactory.createArmorTexture('#1e5799', '#00f2fe');
 const gunMetalTex = TextureFactory.createArmorTexture('#4b5563', '#ffa502');
 const enemyTextures = {
   grunt:    TextureFactory.createEnemyTexture('#26a65b', 'scales'),
@@ -407,7 +389,7 @@ const enemyTextures = {
   boss:     TextureFactory.createEnemyTexture('#c0392b', 'boss')
 };
 
-// --- Raycaster for 3D Isometric Mouse Aiming ---
+// --- Raycaster & Reticle ---
 const raycaster = new THREE.Raycaster();
 const mouseNDC = new THREE.Vector2();
 const aimPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.8);
@@ -422,7 +404,7 @@ reticleMesh.position.y = 0.05;
 scene.add(reticleMesh);
 
 // --- Game State & Inputs ---
-let state = 'START';
+let state = 'MENU';
 let wave = 1;
 let kills = 0;
 let spawnTimer = 0;
@@ -445,13 +427,20 @@ window.addEventListener('mousemove', e => {
 window.addEventListener('mousedown', () => mouseDown = true);
 window.addEventListener('mouseup', () => mouseDown = false);
 
+// Hook up Sanctuary & Game Over Buttons
 document.getElementById('startBtn').onclick = startGame;
-document.getElementById('restartBtn').onclick = startGame;
+document.getElementById('returnHubBtn').onclick = () => {
+  document.getElementById('gameOverScreen').classList.add('hidden');
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('sanctuaryMenu').classList.remove('hidden');
+  if (typeof renderSanctuaryUI === 'function') renderSanctuaryUI();
+  state = 'MENU';
+};
 
 // --- Entities & In-Run Upgrades ---
 let player, playerMesh, bullets = [], enemyBullets = [], enemies = [], gems = [], particles = [];
 
-const UPGRADES = [
+const RUN_UPGRADES = [
   { tag: "Offense", name: "Hollow Points", desc: "+25% Bullet Damage.", apply: p => p.damage *= 1.25 },
   { tag: "Offense", name: "Overclocked Trigger", desc: "+22% Fire Rate.", apply: p => p.fireRate *= 0.78 },
   { tag: "Weapon", name: "Split Chamber", desc: "+1 Projectile per shot.", apply: p => p.multishot += 1 },
@@ -479,18 +468,27 @@ function startGame() {
   AudioSys.init();
   clearEntities();
 
-  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('sanctuaryMenu').classList.add('hidden');
   document.getElementById('gameOverScreen').classList.add('hidden');
   document.getElementById('upgradeScreen').classList.add('hidden');
   document.getElementById('bossHud').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
 
-  // Textured Metallic Hero Rig
+  // Load Equipped Weapon, Skin & Skill Tree Bonuses from data.js
+  const weapon = WEAPONS.find(w => w.id === SaveData.equippedWeapon) || WEAPONS[0];
+  const skin = SKINS.find(s => s.id === SaveData.equippedSkin) || SKINS[0];
+  const bonuses = getSkillBonuses();
+
+  // Build Player Mesh using Equipped Skin Colors
+  const armorTex = TextureFactory.createArmorTexture(skin.primary, skin.trim);
+  playerLight.color.set(skin.visor);
+
   playerMesh = new THREE.Group();
   const body = new THREE.Mesh(
     new THREE.CylinderGeometry(0.45, 0.55, 1.4, 16),
     new THREE.MeshStandardMaterial({
-      map: playerArmorTex,
-      bumpMap: playerArmorTex,
+      map: armorTex,
+      bumpMap: armorTex,
       bumpScale: 0.04,
       metalness: 0.55,
       roughness: 0.3
@@ -501,19 +499,19 @@ function startGame() {
 
   const shoulderPad = new THREE.Mesh(
     new THREE.BoxGeometry(1.15, 0.28, 0.6),
-    new THREE.MeshStandardMaterial({ map: playerArmorTex, metalness: 0.65, roughness: 0.25 })
+    new THREE.MeshStandardMaterial({ map: armorTex, metalness: 0.65, roughness: 0.25 })
   );
   shoulderPad.position.y = 1.15;
   shoulderPad.castShadow = true;
 
   const visor = new THREE.Mesh(
     new THREE.BoxGeometry(0.48, 0.22, 0.45),
-    new THREE.MeshBasicMaterial({ color: 0x00ffff })
+    new THREE.MeshBasicMaterial({ color: skin.visor })
   );
   visor.position.set(0, 1.18, 0.35);
 
   const gun = new THREE.Mesh(
-    new THREE.BoxGeometry(0.24, 0.24, 0.95),
+    new THREE.BoxGeometry(0.24, 0.24, weapon.id === 'railgun' ? 1.35 : 0.95),
     new THREE.MeshStandardMaterial({ map: gunMetalTex, metalness: 0.8, roughness: 0.2 })
   );
   gun.position.set(0.48, 0.85, 0.45);
@@ -522,20 +520,34 @@ function startGame() {
   playerMesh.add(body, shoulderPad, visor, gun);
   scene.add(playerMesh);
 
+  // Initialize Player Stats combining Weapon + Skill Tree
+  const startingMaxHp = Math.round(100 + bonuses.maxHp);
   player = {
     x: 0, z: 0, r: 0.6,
-    hp: 100, maxHp: 100,
-    speed: 8.5,
-    damage: 18,
-    bulletSpeed: 24,
-    fireRate: 210, lastShot: 0,
-    multishot: 1,
-    pierce: 0,
-    critChance: 0.08,
-    critMult: 2.0,
-    vamp: 0,
+    hp: startingMaxHp,
+    maxHp: startingMaxHp,
+    speed: 8.5 * (1 + bonuses.speedMult),
+    damage: weapon.damage * (1 + bonuses.damageMult),
+    bulletSpeed: weapon.bulletSpeed,
+    fireRate: weapon.fireRate * (1 - bonuses.fireRateMult),
+    lastShot: 0,
+    multishot: weapon.multishot + bonuses.multishot,
+    spread: weapon.spread,
+    pierce: weapon.pierce + bonuses.pierce,
+    bulletColor: weapon.bulletColor,
+    bulletSize: weapon.bulletSize,
+    critChance: 0.08 + bonuses.critChance,
+    critMult: 2.0 + bonuses.critMult,
+    vamp: bonuses.vamp,
+    armor: bonuses.armor,
+    xpMult: 1 + bonuses.xpMult,
+    shardMult: 1 + bonuses.shardMult,
+    magnetRange: 4.5 + bonuses.magnetRange,
     xp: 0, xpNext: 50, lvl: 1,
-    dashCd: 0, dashCdMax: 1350, dashTime: 0, dashDir: { x: 0, z: 0 },
+    dashCd: 0,
+    dashCdMax: 1350 * (1 - bonuses.dashCdMult),
+    dashTime: 0,
+    dashDir: { x: 0, z: 0 },
     invuln: 0
   };
 
@@ -721,7 +733,7 @@ function showUpgradeMenu() {
   state = 'UPGRADE';
   const container = document.getElementById('upgradeCards');
   container.innerHTML = '';
-  const picks = [...UPGRADES].sort(() => 0.5 - Math.random()).slice(0, 3);
+  const picks = [...RUN_UPGRADES].sort(() => 0.5 - Math.random()).slice(0, 3);
 
   picks.forEach(upg => {
     const card = document.createElement('div');
@@ -737,6 +749,16 @@ function showUpgradeMenu() {
     container.appendChild(card);
   });
   document.getElementById('upgradeScreen').classList.remove('hidden');
+}
+
+function takePlayerDamage(rawDmg) {
+  if (player.invuln > 0) return;
+  const mitigated = Math.max(1, Math.round(rawDmg * (1 - Math.min(0.6, player.armor))));
+  player.hp -= mitigated;
+  player.invuln = 600;
+  screenShake = 0.55;
+  AudioSys.hurt();
+  spawnParticles(player.x, 0.8, player.z, 0xff4757, 12);
 }
 
 // --- Main Loop ---
@@ -776,7 +798,7 @@ function update(dt, dtMs, now) {
   playerMesh.visible = !(player.invuln > 0 && Math.floor(now / 55) % 2 === 0);
   playerLight.position.set(player.x, 2.5, player.z);
 
-  // Smooth Isometric Camera Follow + Screen Shake
+  // Camera Follow
   const shakeX = (Math.random() - 0.5) * screenShake;
   const shakeZ = (Math.random() - 0.5) * screenShake;
   camera.position.lerp(
@@ -785,7 +807,7 @@ function update(dt, dtMs, now) {
   );
   camera.lookAt(player.x + shakeX, 0, player.z + shakeZ);
 
-  // 3D Raycast Mouse Aiming
+  // Raycast Aiming
   raycaster.setFromCamera(mouseNDC, camera);
   if (raycaster.ray.intersectPlane(aimPlane, aimPoint)) {
     reticleMesh.position.set(aimPoint.x, 0.05, aimPoint.z);
@@ -793,17 +815,16 @@ function update(dt, dtMs, now) {
     playerMesh.rotation.y = angle;
   }
 
-  // Shooting
+  // Weapon Firing
   if (mouseDown && now - player.lastShot > player.fireRate) {
     player.lastShot = now;
-    AudioSys.shoot();
+    AudioSys.shoot(player.fireRate < 150 ? 540 : 400);
     const baseAngle = Math.atan2(aimPoint.z - player.z, aimPoint.x - player.x);
-    const spread = 0.11;
-    const bGeo = new THREE.SphereGeometry(0.18, 8, 8);
-    const bMat = new THREE.MeshBasicMaterial({ color: 0xffeaa7 });
+    const bGeo = new THREE.SphereGeometry(player.bulletSize, 8, 8);
+    const bMat = new THREE.MeshBasicMaterial({ color: player.bulletColor });
 
     for (let i = 0; i < player.multishot; i++) {
-      const a = baseAngle + (i - (player.multishot - 1) / 2) * spread;
+      const a = baseAngle + (i - (player.multishot - 1) / 2) * player.spread;
       const mesh = new THREE.Mesh(bGeo, bMat);
       mesh.position.set(player.x, 0.85, player.z);
       scene.add(mesh);
@@ -812,7 +833,10 @@ function update(dt, dtMs, now) {
         x: player.x, z: player.z,
         vx: Math.cos(a) * player.bulletSpeed,
         vz: Math.sin(a) * player.bulletSpeed,
-        r: 0.22, pierce: player.pierce, hitList: [], mesh
+        r: player.bulletSize + 0.05,
+        pierce: player.pierce,
+        hitList: [],
+        mesh
       });
     }
   }
@@ -841,7 +865,7 @@ function update(dt, dtMs, now) {
       if (Math.hypot(b.x - p.x, b.z - p.z) < b.r + p.r) hitWall = true;
     }
     if (hitWall) {
-      spawnParticles(b.x, 0.85, b.z, 0xffeaa7, 3);
+      spawnParticles(b.x, 0.85, b.z, player.bulletColor, 3);
       scene.remove(b.mesh);
       bullets.splice(i, 1);
       continue;
@@ -879,7 +903,7 @@ function update(dt, dtMs, now) {
           );
           gemMesh.position.set(e.x, 0.45, e.z);
           scene.add(gemMesh);
-          gems.push({ x: e.x, z: e.z, val: e.xp, mesh: gemMesh });
+          gems.push({ x: e.x, z: e.z, val: Math.round(e.xp * player.xpMult), mesh: gemMesh });
 
           spawnParticles(e.x, 0.8, e.z, e.color, 12);
           scene.remove(e.mesh);
@@ -966,13 +990,8 @@ function update(dt, dtMs, now) {
     e.mesh.position.z = e.z;
     if (e.type !== 'boss') e.mesh.rotation.y = -angle;
 
-    if (dist < player.r + e.r && player.invuln <= 0) {
-      const dmg = e.type === 'boss' ? 24 : 12 + Math.floor(wave * 0.8);
-      player.hp -= dmg;
-      player.invuln = 650;
-      screenShake = 0.6;
-      AudioSys.hurt();
-      spawnParticles(player.x, 0.8, player.z, 0xff4757, 12);
+    if (dist < player.r + e.r) {
+      takePlayerDamage(e.type === 'boss' ? 24 : 12 + Math.floor(wave * 0.8));
     }
   }
 
@@ -994,13 +1013,7 @@ function update(dt, dtMs, now) {
     }
 
     if (Math.hypot(eb.x - player.x, eb.z - player.z) < eb.r + player.r) {
-      if (player.invuln <= 0) {
-        player.hp -= eb.dmg;
-        player.invuln = 550;
-        screenShake = 0.5;
-        AudioSys.hurt();
-        spawnParticles(player.x, 0.8, player.z, 0xff4757, 10);
-      }
+      takePlayerDamage(eb.dmg);
       scene.remove(eb.mesh);
       enemyBullets.splice(i, 1);
     }
@@ -1011,7 +1024,7 @@ function update(dt, dtMs, now) {
     const g = gems[i];
     g.mesh.rotation.y += dt * 3;
     const dist = Math.hypot(player.x - g.x, player.z - g.z);
-    if (dist < 4.5) {
+    if (dist < player.magnetRange) {
       const a = Math.atan2(player.z - g.z, player.x - g.x);
       g.x += Math.cos(a) * 14 * dt;
       g.z += Math.sin(a) * 14 * dt;
@@ -1052,10 +1065,16 @@ function update(dt, dtMs, now) {
   document.getElementById('killText').innerText = kills;
   document.getElementById('dashText').innerText = player.dashCd <= 0 ? 'READY' : (player.dashCd / 1000).toFixed(1) + 's';
 
-  // Death Check
+  // Death & Permanent Soul Shard Reward
   if (player.hp <= 0) {
     state = 'GAMEOVER';
+    const baseShards = Math.floor(kills * 1.5 + wave * 15);
+    const earnedShards = Math.round(baseShards * player.shardMult);
+    SaveData.shards += earnedShards;
+    saveProgress();
+
     document.getElementById('deathStats').innerText = `Reached Wave ${wave} | Level ${player.lvl} | Kills: ${kills}`;
+    document.getElementById('earnedShardsText').innerText = earnedShards;
     document.getElementById('gameOverScreen').classList.remove('hidden');
   }
 }
@@ -1069,3 +1088,6 @@ function spawnEnemyBullet(x, z, vx, vz, dmg) {
   scene.add(mesh);
   enemyBullets.push({ x, z, vx, vz, r: 0.25, dmg, mesh });
 }
+
+// Initial background render while on Sanctuary Menu
+renderer.render(scene, camera);
